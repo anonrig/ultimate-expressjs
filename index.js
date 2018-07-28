@@ -10,10 +10,11 @@ const Boom = require('boom');
 
 
 class Server {
-  constructor({port} = {}) {
+  constructor({port, logger} = {}) {
     this.app = express();
     this.server = http.Server(this.app);
     this.port = port;
+    this.logger = logger || console;
 
     this.app.enable('trust proxy');
     this.app.use(cors());
@@ -46,6 +47,7 @@ class Server {
     /* Handle errors */
     this.app.use(function(err, req, res, next) {
       if (err) {
+        this.logger.error(err);
         const {
           statusCode,
           payload
