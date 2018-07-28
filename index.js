@@ -1,0 +1,80 @@
+const path = require('path');
+const express = require('express');
+const http = require('http');
+const bodyParser = require('body-parser');
+const helmet = require('helmet');
+const compression = require('compression');
+const methodOverride = require('method-override');
+const cors = require('cors');
+const Boom = require('boom');
+
+
+class Server {
+  constructor({port} = {}) {
+    this.app = express();
+    this.server = http.Server(this.app);
+    this.port = port;
+
+    this.app.enable('trust proxy');
+    this.app.use(cors());
+    this.app.use(helmet());
+    this.app.use(compression());
+    this.app.use(methodOverride('X-HTTP-Method'));
+    this.app.use(methodOverride('X-HTTP-Method-Override'));
+    this.app.use(methodOverride('X-Method-Override'));
+    this.app.use(bodyParser.json());
+    this.app.use(bodyParser.urlencoded({
+      extended: true
+    }));
+  }
+
+  setRoutes(app) {
+    /**
+     * Just override this function to set your routes.
+     */
+   }
+
+  setErrorHandlers() {
+    /**
+     * 404 pages.
+     */
+    this.app.use((req, res) => {
+      const message = Boom.notFound('Not found');
+      res.status(404).json(message.output.payload);
+    });
+
+    /* Handle errors */
+    this.app.use(function(err, req, res, next) {
+      if (err) {
+        const {
+          statusCode,
+          payload
+        } = err.isBoom ? err.output : Boom.wrap(err).output;
+
+        return res
+          .status(statusCode)
+          .json(Object.assign({}, payload, {payload: err.data}));
+      }
+
+      const {
+        statusCode, payload
+      } = Boom.badImplementation('Server error').output;
+      res.status(statusCode).json(payload);
+    });
+   }
+
+   listen() {
+    this.setRoutes(this.app);
+    this.setErrorHandlers(this.app)
+
+    return new Promise((resolve, reject) => {
+      this.server.listen(this.port, (error) => {
+        if (error) return reject(error);
+
+        resolve();
+      });
+    });
+  }
+}
+
+module.exports = Server;
