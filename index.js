@@ -45,13 +45,15 @@ class Server {
     });
 
     /* Handle errors */
-    this.app.use(function(err, req, res, next) {
+    this.app.use((err, req, res, next) => {
       if (err) {
         this.logger.error(err);
         const {
           statusCode,
           payload
-        } = err.isBoom ? err.output : Boom.wrap(err).output;
+        } = err.isBoom ? err.output :
+            err.isJoi ? Boom.badRequest(err.details[0].message).output :
+            Boom.boomify(err).output;
 
         return res
           .status(statusCode)
