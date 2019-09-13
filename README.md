@@ -44,14 +44,14 @@ express.setErrorHandlers = (app) => {
 In order to use Coralogix as your default logger for logging errors, please use the following code:
 
 ```javascript
-const expressLogger = (err) => {
+const expressLogger = (error) => {
   const log = new Coralogix.Log({
     severity:Coralogix.Severity.error,
     className: 'express.js',
     methodName: 'express',
     text: error
   })
-  errorLogger.addLog()
+  errorLogger.addLog(log)
 }
 const express = new http({port: PORT, logger: expressLogger})
 ```

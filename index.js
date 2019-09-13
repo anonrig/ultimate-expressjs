@@ -6,7 +6,7 @@ const compression = require('compression');
 const methodOverride = require('method-override');
 const cors = require('cors');
 const Boom = require('boom');
-const {isCoralogixInstalled} = require('helper')
+const {isCoralogixInstalled} = require('./helper')
 
 class Server {
   constructor({port, logger} = {}) {
