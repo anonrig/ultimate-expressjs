@@ -57,3 +57,37 @@ const express = new http({port: PORT, logger: expressLogger})
 ```
 
 UltimateExpress package automatically checks if `coralogix-logger` is installed in your project and if succeed, converts your logger into a callback function to send your unique log to Coralogix. If you want to remove this default behavior just set `http.isCoralogixInstalled = true`
+
+### Rate Limit Support
+
+Just add `limiterOptions` object to ultimate expressjs constructor. This object will be used inside `express-rate-limit`. For more information about the object context, please refer to `express-rate-limit` npm package documentation.
+
+Example usage of Coralogix with Rate Limiter using Redis:
+
+```javascript
+const express = new http({
+  port: process.env.PORT,
+  logger: expressLogger,
+  limiterOptions: {
+    store: new RedisStore({
+      client: require('redis').createClient(process.env.REDIS_URL)
+    }),
+    max: 10,
+    delay: 0,
+    windowMs: 1 * 60 * 1000
+  },
+  handler: (req, res, next) => {
+    suspiciousLogger.addLog(new Coralogix.Log({
+      severity: Coralogix.Severity.warning,
+      className: 'index.js',
+      methodName: 'rateLimiter',
+      text: {
+        message: `${req.headers['cf-connecting-ip']} is sending too many requests`,
+        query: req.query
+      }
+    }))
+
+    next(Boom.tooManyRequests('You have exceeded your rate limit.'))
+  }
+})
+```

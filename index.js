@@ -7,14 +7,17 @@ const methodOverride = require('method-override');
 const cors = require('cors');
 const Boom = require('boom');
 const {isCoralogixInstalled} = require('./helper')
+const RateLimiter = require('express-rate-limit')
 
 class Server {
-  constructor({port, logger} = {}) {
+  constructor({port, logger, limiterOptions} = {}) {
     this.app = express();
     this.server = http.Server(this.app);
     this.port = port;
     this.logger = logger || console;
     this.isCoralogixInstalled = isCoralogixInstalled;
+    this.limiterEnabled = !!limiterOptions
+    this.limiterOptions = limiterOptions
 
     this.app.enable('trust proxy');
     this.app.use(cors());
@@ -27,6 +30,11 @@ class Server {
     this.app.use(bodyParser.urlencoded({
       extended: true
     }));
+
+    if (this.limiterEnabled) {
+      this.limiter = new RateLimiter(this.limiterOptions)
+      this.app.use(this.limiter)
+    }
   }
 
   setRoutes(app) {
