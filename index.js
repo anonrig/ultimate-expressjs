@@ -1,4 +1,3 @@
-const path = require('path');
 const express = require('express');
 const http = require('http');
 const bodyParser = require('body-parser');
@@ -7,7 +6,7 @@ const compression = require('compression');
 const methodOverride = require('method-override');
 const cors = require('cors');
 const Boom = require('boom');
-
+const {isCoralogixInstalled} = require('helper')
 
 class Server {
   constructor({port, logger} = {}) {
@@ -15,6 +14,7 @@ class Server {
     this.server = http.Server(this.app);
     this.port = port;
     this.logger = logger || console;
+    this.isCoralogixInstalled = isCoralogixInstalled;
 
     this.app.enable('trust proxy');
     this.app.use(cors());
@@ -47,7 +47,11 @@ class Server {
     /* Handle errors */
     this.app.use((err, req, res, next) => {
       if (err) {
-        this.logger.error(err);
+        if (this.isCoralogixInstalled) {
+          this.logger(err);
+        } else {
+          this.logger.error(err);
+        }
         const {
           statusCode,
           payload
